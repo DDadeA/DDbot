@@ -17,8 +17,7 @@ from pydub.playback import _play_with_simpleaudio as play_sound
 # 필요한 전역 변수 선언
 _version = 'v3.2.4'
 
-#TOKEN = "MTAyNDczMzg3NjkzNDk1MDk2NA.G81w2j.lE4EvUa8iO0PeKmtvTW2VZkz2beW1zvb7aIclg" #지아
-TOKEN = "NzkyOTM1NjUxNzM3MzM3ODcw.X-k83w.AxrnSrPjzVVIgFMBV7-CB8cAPEk"
+TOKEN = "{yourtoken}"
 
 VCdict = dict()
 whitelist = ['정연호','설로기']
@@ -33,29 +32,29 @@ banTTSWord = [':', '<', '>']
 
 
 # AUTO UPDATE
-def req_check(req):
-    if not req.status_code == 200:
-        print('> 네트워크 연결을 확인해주세요. 엔터를 누르면 종료됩니다.')
-        input('')
-        exit()
+# def req_check(req):
+#    if not req.status_code == 200:
+#        print('> 네트워크 연결을 확인해주세요. 엔터를 누르면 종료됩니다.')
+#        input('')
+#        exit()
 
-req = requests.get('http://version.ddbot.o-r.kr', auth=('user','pass'))
-req_check(req)
+#req = requests.get('{bot_version_path}', auth=('user','pass'))
+#req_check(req)
 
-recent_version = req.text
+# recent_version = req.text
 
-if not _version == recent_version:
-    print(f'> 새로운 버전 {recent_version}을 발견했습니다. 업데이트를 진행합니다.')
-    
-    req = requests.get('http://ddbot.o-r.kr', auth=('user','pass'))
-    req_check(req)
-    
-    file = open('DDBOT.py', 'w', encoding='utf-8')
-    file.write(req.text.replace('\r', ''))
-    file.close()
-    print('> 업데이트가 완료되었습니다. 프로그램을 다시 시작해주세요. 엔터를 누르면 종료됩니다.')
-    input('')
-    exit()
+# if not _version == recent_version:
+#    print(f'> 새로운 버전 {recent_version}을 발견했습니다. 업데이트를 진행합니다.')
+#    
+#    req = requests.get('bot_code_path', auth=('user','pass'))
+#    req_check(req)
+#    
+#    file = open('DDBOT.py', 'w', encoding='utf-8')
+#    file.write(req.text.replace('\r', ''))
+#    file.close()
+#    print('> 업데이트가 완료되었습니다. 프로그램을 다시 시작해주세요. 엔터를 누르면 종료됩니다.')
+#    input('')
+#    exit()
 
 async def makevoice(_text, _voice, _args):
     if _voice == voicelist[0]: await googleTTS(_text, _args)
