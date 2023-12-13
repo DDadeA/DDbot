@@ -3,7 +3,7 @@ import os
 os.system('pip install -r ./requirement.txt')
 
 import git
-repo = git.Repo('https://github.com/DDadeA/DDbot')
+repo = git.Repo('DDadeA/DDbot')
 repo.remotes.origin.pull()
 
 
