@@ -32,7 +32,7 @@ if not 'tts_model' in dirlist: mkdir('tts_model')
 if not 'config.ini' in dirlist:
     config['INITIAL'] = {
         'BOT_TOKEN': 'YOUR_TOKEN',
-        'Whitelist': '연호,근데 설로기를 숨김'
+        'Whitelist': '너의 이름은,연호'
     }
     config['TTS'] = {'rate':1.0, 'volume':0.0, 'pitch':0.0}
     config['nouse'] = {
