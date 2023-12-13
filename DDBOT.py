@@ -1,60 +1,66 @@
+# Auto update
+import os
+os.system('pip install -r ./requirement.txt')
+
+import git
+repo = git.Repo('DDadeA/DDbot')
+repo.remotes.origin.pull()
+
+
 import discord
 from os.path import exists
-from os import listdir
+from os import listdir, mkdir
 import time
 import PySimpleGUI as sg
 from threading import Thread
-import requests
+from tempfile import NamedTemporaryFile
 
 from gtts import gTTS
 from navertts import NaverTTS
 
 import audio_effects
 from pydub import AudioSegment
-from pydub.playback import _play_with_simpleaudio as play_sound
+import configparser
+
+_version = 'V4'
+
+config = configparser.ConfigParser()
+
+dirlist = listdir()
+if not 'effect' in dirlist: mkdir('effect')
+if not 'tts_model' in dirlist: mkdir('tts_model')
+if not 'config.ini' in dirlist:
+    config['INITIAL'] = {
+        'BOT_TOKEN': 'YOUR_TOKEN',
+        'Whitelist': '너의 이름은,연호'
+    }
+    config['TTS'] = {'rate':1.0, 'volume':0.0, 'pitch':0.0}
+    config['nouse'] = {
+        'speed': '1',
+    }
+    with open('config.ini', 'w', encoding='utf8') as configfile:
+        config.write(configfile)
+else: config.read('config.ini', encoding='utf8')
+
+TOKEN = config['INITIAL']['BOT_TOKEN']
+whitelist = config['INITIAL']['Whitelist'].split(',')
+speed = float(config['nouse']['speed'])
+audioeffect = {}
+audioeffect['rate']   = float(config['TTS']['rate']  )
+audioeffect['volume'] = float(config['TTS']['volume'])
+audioeffect['pitch']  = float(config['TTS']['pitch'] )
 
 
-# 필요한 전역 변수 선언
-_version = 'v3.2.4'
 
-TOKEN = "{yourtoken}"
-
+out_path = NamedTemporaryFile().name + '.mp3'
+effected_path = NamedTemporaryFile().name + '.mp3'
 VCdict = dict()
-whitelist = ['정연호','설로기']
 
 voicelist = ['Google_man', 'Naver_woman']
 voice = voicelist[0]
-speed = 1.0
 
-audioeffect = {'rate':1.0, 'volume':0.0, 'pitch':0.0}
 
 banTTSWord = [':', '<', '>']
-
-
-# AUTO UPDATE
-# def req_check(req):
-#    if not req.status_code == 200:
-#        print('> 네트워크 연결을 확인해주세요. 엔터를 누르면 종료됩니다.')
-#        input('')
-#        exit()
-
-#req = requests.get('{bot_version_path}', auth=('user','pass'))
-#req_check(req)
-
-# recent_version = req.text
-
-# if not _version == recent_version:
-#    print(f'> 새로운 버전 {recent_version}을 발견했습니다. 업데이트를 진행합니다.')
-#    
-#    req = requests.get('bot_code_path', auth=('user','pass'))
-#    req_check(req)
-#    
-#    file = open('DDBOT.py', 'w', encoding='utf-8')
-#    file.write(req.text.replace('\r', ''))
-#    file.close()
-#    print('> 업데이트가 완료되었습니다. 프로그램을 다시 시작해주세요. 엔터를 누르면 종료됩니다.')
-#    input('')
-#    exit()
 
 async def makevoice(_text, _voice, _args):
     if _voice == voicelist[0]: await googleTTS(_text, _args)
@@ -63,23 +69,23 @@ async def makevoice(_text, _voice, _args):
 async def googleTTS(_text, _args):
     print('> googleTTS')
     tts = gTTS(text =_text, lang='ko')
-    tts.save("out.mp3")
+    tts.save(out_path)
     
 async def naverTTS(_text, _args):
     print('> naverTTS')
     tts = NaverTTS(str(_text), speed=int((_args[0]-1)*2.5))
-    tts.save('out.mp3')
+    tts.save(out_path)
 
 
 async def effect_audio(_path, _ae):
     # import audio file
     audio = AudioSegment.from_file(_path, str(_path[-3:]))
     
-    if not _ae['rate'] == 1.0: audio = audio_effects.speed_change(audio, speed_changes=_ae['rate'])
-    if not _ae['pitch'] == 1.0: audio = audio_effects.pitch_change(audio, _ae['pitch'])
-    if not _ae['volume'] == 1.0: audio = audio + _ae['volume']
+    if not _ae['rate']   == '1.0': audio = audio_effects.speed_change(audio, speed_changes=_ae['rate'])
+    if not _ae['pitch']  == '1.0': audio = audio_effects.pitch_change(audio, _ae['pitch'])
+    if not _ae['volume'] == '1.0': audio = audio + _ae['volume']
     
-    audio.export("effected.wav", format="wav")
+    audio.export(effected_path, format="wav")
 
 
 async def commander(message):
@@ -97,6 +103,13 @@ intents.members = True
 intents.message_content = True
 client = discord.Client(intents=intents)
 
+import struct
+bitness = struct.calcsize('P') * 8
+target = 'x64' if bitness > 32 else 'x86'
+filename = f'./libopus-0.{target}.dll'  # filename = os.path.join(os.path.dirname(os.path.abspath(discord.__file__)), 'bin', f'libopus-0.{target}.dll')
+discord.opus.load_opus(filename)
+print(filename)
+
 @client.event
 async def on_ready():
     print('Event > on_ready')
@@ -108,14 +121,17 @@ async def on_message(message):
     
     global name, tone, rate, whitelist, VCdict
     
-    #주제가 -DDbot 인가?
-    if not 'DDbot' in message.channel.topic: return
     
-    # 봇 본인의 메세지인가?
+    # DDbot?
+    try: 
+        if not 'DDbot' in message.channel.topic: return
+    except: return
+    
+    # is it own message
     if message.author == client.user: return
     
     
-    # 메세지 가공
+    # message refine
     msg = message.system_content
     
     if not len(message.stickers) == 0:
@@ -126,7 +142,8 @@ async def on_message(message):
     
     print(f'final text > \'{msg}\'')
     
-    # 명령어인지 체크
+    
+    # is command
     try:
         if msg[:1] in ['e', 'ㄷ']:
             await commander(message)
@@ -134,60 +151,59 @@ async def on_message(message):
     except: pass
     
     
-    # 화이트리스트인가?
+    # Whitelist?
     if message.author.name in whitelist:   pass
     elif message.author.nick in whitelist: pass
     elif whitelist[0] == '':               pass  # 화리가 없는가?
     else: return
     
-    # VC 연결
+    
+    # connect to the voice channel
     if not str(message.author.voice.channel.id) in VCdict:
         VCdict[str(message.author.voice.channel.id)] = await message.author.voice.channel.connect(reconnect=True)
         msg = 'start'
 
 
-    # 특수 사운드 요청인가?
+    # special voice?
     if exists(f'./effect/{msg}.mp3'):
         audio_path = f'./effect/{msg}.mp3'
     elif exists(f'./effect/{msg}.wav'):
         audio_path = f'./effect/{msg}.wav'
     else:
-        ## 일반 메세지 필터
+        ## message filter
         if message.system_content.startswith('<:'): # removed at BanTTSWord
             msg = '이모티콘'
         if msg.startswith('http'):
             msg = '링크'
             
-        ## 메세지 내용을 mp3로 제작.
+        ## message to mp3
         await makevoice(msg, voice, [speed]) 
-        audio_path = 'out.mp3'
+        audio_path = out_path
     
-    # dict 에서 vc 불러오기
+    # get voice client
     try: vc = VCdict[str(message.author.voice.channel.id)]
     except: 
         await message.channel.send(f'> {message.author.name}, 당신이 참여한 음성채팅의 존재를 확인할 수 없습니다.')
         return
     
-    # 효과 넣기
+    # Effect
     await effect_audio(audio_path, audioeffect)
     
-    # 이전 소리가 끝날때까지 기다리기
+    # wait until
     while vc.is_playing(): time.sleep(0.5)
     
-    # 재생
-    audio_source = discord.FFmpegPCMAudio('effected.wav')
+    # plays
+    audio_source = discord.FFmpegPCMAudio(effected_path)
     vc.play(audio_source, after=None)
 
 
-
+@lambda _: Thread(target=_, daemon=True).start()
 def rundiscord():
     client.run(TOKEN)
-# 스레드 생성. daemon 스레드는 백그라운드 스레드이며, 프로그램 종료 시 함께 종료됨
-thread = Thread(target=rundiscord, args=(), daemon=True)
-thread.start()
 
 
-sg.theme("Darkblue")
+
+sg.theme("DarkGrey1")
 layout_r = [[sg.Text('목소리ㅡㅡㅡㅡㅡㅡㅡㅡ', font='default 16'), sg.OptionMenu(values=voicelist, default_value = voicelist[0], size=(30,10), key = 'voice')], 
             [sg.Text('말하기속도ㅡㅡㅡㅡㅡㅡ', font='default 16'), sg.Slider(range=(0.5, 2.0), enable_events= True, default_value=1.0, resolution=0.1, orientation='h', key = 'speed', font = 'default 8')],
             [sg.Text('화이트리스트ㅡㅡㅡㅡㅡ', font='default 16'), sg.Input(default_text = ','.join(whitelist), enable_events= True, key = 'user_list', font = 'default 16', size=(25,10))]
