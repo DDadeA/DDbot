@@ -61,7 +61,14 @@ voice = voicelist[0]
 
 if len(listdir('tts_model'))>0:
     print('|안내| - VITS 모델이 발견되었습니다. 해당 모델 사용을 위한 모듈을 불러옵니다.')
-    from moegoe_tts import MoeGoeTTS
+    from .github import download_folder_from_github
+    import os
+    
+    if not os.path.exists(os.getcwd()+"/bin/moegoe_tts"):
+        print("|안내| - 필요한 모듈을 설치합니다.")
+        download_folder_from_github("DDadeA", "moegoe_tts", os.getcwd()+"/bin/moegoe_tts")
+    
+    from .moegoe_tts import MoeGoeTTS
     
     
     for model_name in listdir('tts_model'):
