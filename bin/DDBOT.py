@@ -1,10 +1,5 @@
-# Auto update
 import os
 os.system('pip install -r ./requirement.txt')
-
-from .github import download_folder_from_github
-print(f"Current directory: {os.getcwd()}")
-download_folder_from_github("DDadeA", "DDbot", os.getcwd())
 
 import discord
 from os.path import exists
