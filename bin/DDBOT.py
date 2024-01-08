@@ -16,7 +16,7 @@ import configparser
 ## Utils
 from .makevoice import *
 
-_version = 'V5'
+_version = 'V5.1'
 
 
 config = configparser.ConfigParser()
@@ -53,7 +53,7 @@ banTTSWord = [':', '<', '>']
 async def effect_audio(_path, _ae):
     # import audio file
     try:
-        audio = AudioSegment.from_file(_path, str(_path[-3:]))
+        audio = AudioSegment.from_file(_path, 'wav')
         
         if not _ae['rate']   == '1.0': audio = audio_effects.speed_change(audio, speed_changes=_ae['rate'])
         if not _ae['pitch']  == '1.0': audio = audio_effects.pitch_change(audio, _ae['pitch'])
@@ -62,6 +62,13 @@ async def effect_audio(_path, _ae):
         audio.export(effected_path, format="wav")
     except Exception as e:
         print("effect_audio > Error : ", e)
+        audio = AudioSegment.from_file(_path, 'mp3')
+        
+        if not _ae['rate']   == '1.0': audio = audio_effects.speed_change(audio, speed_changes=_ae['rate'])
+        if not _ae['pitch']  == '1.0': audio = audio_effects.pitch_change(audio, _ae['pitch'])
+        if not _ae['volume'] == '1.0': audio = audio + _ae['volume']
+        
+        audio.export(effected_path, format="mp3")
 
 
 async def commander(message):
