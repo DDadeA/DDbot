@@ -1,1 +1,1 @@
-python -m bin/update.py
+python -m bin/update
