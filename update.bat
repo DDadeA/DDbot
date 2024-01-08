@@ -1,1 +1,0 @@
-python -m bin/update
