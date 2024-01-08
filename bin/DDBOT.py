@@ -2,8 +2,9 @@
 import os
 os.system('pip install -r ./requirement.txt')
 
-import git
-git.Git("..").clone("https://github.com/DDadeA/DDbot")
+from .github import download_folder_from_github
+print(f"Current directory: {os.getcwd()}")
+download_folder_from_github("DDadeA", "DDbot", os.getcwd())
 
 import discord
 from os.path import exists
@@ -20,7 +21,7 @@ import configparser
 ## Utils
 from .makevoice import *
 
-_version = 'V4'
+_version = 'V5'
 
 
 config = configparser.ConfigParser()
@@ -48,21 +49,24 @@ audioeffect['rate']   = float(config['TTS']['rate']  )
 audioeffect['volume'] = float(config['TTS']['volume'])
 audioeffect['pitch']  = float(config['TTS']['pitch'] )
 
-out_path = NamedTemporaryFile().name + '.mp3'
-effected_path = NamedTemporaryFile().name + '.mp3'
+out_path = NamedTemporaryFile().name + '.wav'
+effected_path = NamedTemporaryFile().name + '.wav'
 VCdict = dict()
 
 banTTSWord = [':', '<', '>']
 
 async def effect_audio(_path, _ae):
     # import audio file
-    audio = AudioSegment.from_file(_path, str(_path[-3:]))
-    
-    if not _ae['rate']   == '1.0': audio = audio_effects.speed_change(audio, speed_changes=_ae['rate'])
-    if not _ae['pitch']  == '1.0': audio = audio_effects.pitch_change(audio, _ae['pitch'])
-    if not _ae['volume'] == '1.0': audio = audio + _ae['volume']
-    
-    audio.export(effected_path, format="wav")
+    try:
+        audio = AudioSegment.from_file(_path, str(_path[-3:]))
+        
+        if not _ae['rate']   == '1.0': audio = audio_effects.speed_change(audio, speed_changes=_ae['rate'])
+        if not _ae['pitch']  == '1.0': audio = audio_effects.pitch_change(audio, _ae['pitch'])
+        if not _ae['volume'] == '1.0': audio = audio + _ae['volume']
+        
+        audio.export(effected_path, format="wav")
+    except Exception as e:
+        print("effect_audio > Error : ", e)
 
 
 async def commander(message):

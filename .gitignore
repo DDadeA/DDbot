@@ -3,3 +3,6 @@ tts_model
 effect
 bin/ffmpeg.exe
 config.ini
+moegoe_tts
+
+bin/__pycache__/
